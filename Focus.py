@@ -9,10 +9,7 @@ import sentinel1decoder
 import logging
 from scipy.interpolate import interp1d
 
-root_dir = os.path.join(os.getcwd(), 'L0')
-filepath = root_dir + "/02_S1B_S6_RAW__0SDH_20210919T002614_20210919T002640_028760_036EA1_4726.SAFE/1/"
-filename = "s1b-s6-raw-s-hh-20210919t002614-20210919t002640-028760-036ea1.dat"
-inputfile = filepath+filename
+inputfile = '/Users/robertodelprete/Documents/PyScripts/SARLens/SSFocus/Data/s1b-s6-raw-s-hh-20210919t002614-20210919t002640-028760-036ea1.dat'
 
 decoder = sentinel1decoder.Level0Decoder(inputfile, log_level=logging.WARNING)
 df = decoder.decode_metadata()
