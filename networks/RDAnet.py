@@ -84,7 +84,7 @@ out = model(dummy_input)
 model = model.to(device)
 
 # Params
-batch_size = 32
+batch_size = 8
 loss_fn = torch.nn.L1Loss()
 lr = 1e-4
 
@@ -205,7 +205,3 @@ def training_model(model, device, optimizer, loss_fn, train_loader, val_loader, 
         torch.save(model.state_dict(), 'model.pth')
 
     return train_loss_log, val_loss_log
-
-
-# train_loss, val_loss = training_model(model, device, optimizer=optim, loss_fn=loss_fn, train_loader, val_loader, scheduler= scheduler)
-
