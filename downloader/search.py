@@ -28,7 +28,7 @@ class RAWHandler:
             "platform": "Sentinel-1",
             "processingLevel": "RAW",
             "intersectsWith": self.wkt,
-            "maxResults": 1,
+            "maxResults": 20,
             'start': self.start,
             'end': self.end,
         }
@@ -62,6 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
     parser.add_argument("--start", help="Start date", default='2020-01-01')
     parser.add_argument("--end", help="End date", default='2020-12-31')
+    parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/')
     
     parser.add_argument("--username", help="ASF username", type=str)
     parser.add_argument("--psw", help="ASF password", type=str)
@@ -75,7 +76,8 @@ if __name__ == "__main__":
     print('='*50)
     
     print('Downloading...')
-    D.download(args.username, args.psw, output_dir='/Users/robertodelprete/Documents/PyScripts/SARLens/SSFocus/Data/RAW')
+    os.makedirs(args.out, exist_ok=True)
+    D.download(args.username, args.psw, output_dir=args.out)
     print('='*50)
     print('Download complete!')
     
