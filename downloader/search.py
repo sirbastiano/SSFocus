@@ -28,7 +28,7 @@ class RAWHandler:
             "platform": "Sentinel-1",
             "processingLevel": "RAW",
             "intersectsWith": self.wkt,
-            "maxResults": 1000,
+            "maxResults": 1,
             'start': self.start,
             'end': self.end,
         }
@@ -48,7 +48,6 @@ class RAWHandler:
         return df
     
     def download(self, username, psw, output_dir):
-        self.results.download_all()
         session = asf.ASFSession().auth_with_creds(username, psw)
         try:
             self.results.download(path=output_dir, session=session)
@@ -57,16 +56,15 @@ class RAWHandler:
             sys.exit(1)
     
     
-if __name__ == "__main__":
+if __name__ == "__main__":    
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
     parser.add_argument("--start", help="Start date", default='2020-01-01')
     parser.add_argument("--end", help="End date", default='2020-12-31')
-    parser.add_argument("--output_dir", help="Output directory", default='data/')
     
-    parser.add_argument("username", help="ASF username")
-    parser.add_argument("psw", help="ASF password")
+    parser.add_argument("--username", help="ASF username", type=str)
+    parser.add_argument("--psw", help="ASF password", type=str)
     
     args = parser.parse_args()
     
@@ -77,8 +75,9 @@ if __name__ == "__main__":
     print('='*50)
     
     print('Downloading...')
-    os.makedirs(args.output_dir, exist_ok=True)
-    D.download(args.username, args.psw, output_dir=parser.output_dir)
+    D.download(args.username, args.psw, output_dir='/Users/robertodelprete/Documents/PyScripts/SARLens/SSFocus/Data/RAW')
+    print('='*50)
+    print('Download complete!')
     
           
     

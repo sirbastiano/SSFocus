@@ -44,11 +44,13 @@ setup(
               'scikit-learn',
               'xarray',
               'geopandas',
-              'sentineleof',
+              'pandas>=1.4, <2',
               'asf_search',
               'matplotlib',
               'seaborn',
-              'tqdm'
+              'tqdm',
+              'tzlocal',
+              'regex',
        ],
     classifiers=[
         'Development Status :: 3 - Alpha',
