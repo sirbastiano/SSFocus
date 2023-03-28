@@ -7,10 +7,20 @@ import os, sys
 class RAWHandler:
     def __init__(self, wkt, start, end):
         # Initialize the object and set the values of the attributes
-        self.wkt = wkt
-        self.start = start
-        self.end = end
+        self.wkt = wkt        
+        self.start = self.date_check(start)
+        self.end = self.date_check(end)
         self.results = None
+    
+    @staticmethod
+    def date_check(date):
+        if not date.endswith('Z'):
+            if date.endswith('T00:00:00.000Z'):
+                return date
+            else:
+                return date + 'T00:00:00.000Z'
+        else:
+            return date
 
     def search(self):
         # Set search parameters
@@ -20,7 +30,7 @@ class RAWHandler:
             "intersectsWith": self.wkt,
             "maxResults": 1000,
             'start': self.start,
-            'end': self.end
+            'end': self.end,
         }
 
         try:
@@ -50,10 +60,10 @@ class RAWHandler:
 if __name__ == "__main__":
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("wkt", help="WKT polygon to search")
-    parser.add_argument("start", help="Start date")
-    parser.add_argument("end", help="End date")
-    parser.add_argument("output_dir", help="Output directory")
+    parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
+    parser.add_argument("--start", help="Start date", default='2020-01-01')
+    parser.add_argument("--end", help="End date", default='2020-12-31')
+    parser.add_argument("--output_dir", help="Output directory", default='data/')
     
     parser.add_argument("username", help="ASF username")
     parser.add_argument("psw", help="ASF password")
@@ -67,6 +77,7 @@ if __name__ == "__main__":
     print('='*50)
     
     print('Downloading...')
+    os.makedirs(args.output_dir, exist_ok=True)
     D.download(args.username, args.psw, output_dir=parser.output_dir)
     
           
