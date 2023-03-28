@@ -66,69 +66,10 @@ class RDAnet(nn.Module):
         x = self.conv1(x)
         copy = x
 
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
-
-        identity = x
-        x = self.residual(x)
-        x = x + identity
+        for _ in range(16):
+            identity = x
+            x = self.residual(x)
+            x = x + identity
 
         x = self.conv2(x)
         x = x + copy
