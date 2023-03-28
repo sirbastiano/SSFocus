@@ -19,7 +19,7 @@ def main():
         with zipfile.ZipFile(f, 'r') as zip_ref:
             zip_ref.extractall(zip_dir)
         # remove the zip file
-        os.remove(f)
+        # os.remove(f)
         
 if __name__ == "__main__":
     main()

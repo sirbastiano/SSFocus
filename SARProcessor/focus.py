@@ -10,7 +10,7 @@ import logging
 from scipy.interpolate import interp1d
 import argparse
 
-class Focus:
+class RD:
     def __init__(self, decoder, raw, ephemeris):
         self.decoder = decoder
         self.selection = raw
@@ -245,7 +245,7 @@ if __name__ == "__main__":
        ephemeris = sentinel1decoder.utilities.read_subcommed_data(df)
        # TODO: script to check the shapes of the dataframes
        selection = df.iloc[50:1000]  # from 61 it works
-       F = Focus(decoder, selection, ephemeris)
-       logging.info(f"selected {F.selection.shape[0]} lines")
-       F.process()
+       RangeDoppler = RD(decoder, selection, ephemeris)
+       logging.info(f"selected {RangeDoppler.selection.shape[0]} lines")
+       RangeDoppler.process()
        print("Done")
