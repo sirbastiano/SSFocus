@@ -1,6 +1,25 @@
 # SARLens: Synthetic Aperture Radar (SAR) Image Focusing Library
 
+## Introduction
+
 **SARLens** is a cutting-edge, avant-garde Python package designed for the purpose of decoding and focusing raw Sentinel-1 Synthetic Aperture Radar (SAR) images through the implementation of pioneering deep learning techniques. The library expertly processes the satellite data, employing the Range-Doppler algorithm for optimal image focusing. SARLens stands as an instrumental tool for remote sensing experts, computer scientists, and researchers aiming to harness the power of SAR imaging for various applications.
+## Table of Contents
+
+- [Introduction](#Introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Citation](#citation)
+- [Support](#support)
+
+The Sentinel-1 data decoding capabilities of SARLens are built upon the esteemed library developed by Rich Hall, providing an expert foundation for the processing of SAR images.
+
+
+
+
 
 ## Features
 
