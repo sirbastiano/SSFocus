@@ -29,7 +29,8 @@ class RAWHandler:
             "processingLevel": "RAW",
             "intersectsWith": self.wkt,
             "maxResults": max_res,
-            "beamSwath": ["IW", "S1", "S2", "S3", "S4", "S5", "S6"],
+            # "beamSwath": ["IW", "S1", "S2", "S3", "S4", "S5", "S6"],
+            "beamSwath": ["S1", "S2", "S3", "S4", "S5", "S6"],
             'start': self.start,
             'end': self.end,
         }
@@ -62,7 +63,7 @@ def download_single(wkt, start, end, username, psw, output_dir, download=False, 
         print('='*50)
         print('Search results:', df)
         print('='*50)
-        if download:
+        if download and len(df) > 0:
             print('Downloading...')
             os.makedirs(output_dir, exist_ok=True)
             D.download(username, psw, output_dir=output_dir)
@@ -73,7 +74,7 @@ def download_single(wkt, start, end, username, psw, output_dir, download=False, 
 if __name__ == "__main__":
     """
     Example usage:
-        python search.py --start "2020-01-01" --end "2020-12-31" --out "./Data/RAW/" --username "username" --psw "password" --max 200 --download --all
+        python Downloader/search.py --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/SM/" --username "username" --psw "password" --max 200 --download
     """    
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
@@ -101,7 +102,8 @@ if __name__ == "__main__":
         df.to_csv(os.path.join(args.out, 'all_products.csv'), index=False)
     else:
         df = download_single(wkt=args.wkt, start=args.start, end=args.end, username=args.username, psw=args.psw, output_dir=args.out, download=args.download, max_res=args.max_res)
-    
+        df.to_csv(os.path.join(args.out, 'all_products.csv'), index=False)
+
           
     
     
