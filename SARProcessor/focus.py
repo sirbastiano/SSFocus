@@ -201,31 +201,47 @@ class RD:
         plt.xlabel("Down Range (samples)")
         plt.ylabel("Cross Range (samples)")
         plt.show()
-
+        
     def process(self):
         """Main processing method."""
+        print("Step 1/15: Decoding file...")
         self.decode_file()
+        print("Step 2/15: Extracting parameters...")
         self.extract_parameters()
+        print("Step 3/15: Calculating wavelength...")
         self.calculate_wavelength()
+        print("Step 4/15: Calculating sample rates...")
         self.calculate_sample_rates()
+        print("Step 5/15: Creating fast time vector...")
         self.create_fast_time_vector()
+        print("Step 6/15: Calculating slant range...")
         self.calculate_slant_range()
+        print("Step 7/15: Calculating axes...")
         self.calculate_axes()
+        print("Step 8/15: Calculating spacecraft velocity...")
         self.calculate_spacecraft_velocity()
+        print("Step 9/15: Calculating positions...")
         self.calculate_positions()
+        print("Step 10/15: Calculating velocity and d...")
         self.calculate_velocity_and_d()
+        print("Step 11/15: Processing frequency domain data...")
         self.process_freq_domain_data()
+        print("Step 12/15: Applying range filter...")
         self.apply_range_filter()
+        print("Step 13/15: Applying RCMC filter...")
         self.apply_rcmc_filter()
+        print("Step 14/15: Applying azimuth filter...")
         self.apply_azimuth_filter()
+        print("Step 15/15: Plotting image...")
         self.plot_img()
+
 
 
 if __name__ == "__main__":
         # Create argument parser
         parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder")
         parser.add_argument("--input_file", help="Input file")
-        parser.add_argument("--swath_number", help="Swath number")
+        parser.add_argument("--swath_number", help="Swath number", default=None)
         
         try:
             args = parser.parse_args()
@@ -235,13 +251,12 @@ if __name__ == "__main__":
         logging.info("Arguments have been parsed")
         
         input_file = args.input_file
-        swath_number = int(args.swath_number)
-        
-        
         # Create object
         decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
         df = decoder.decode_metadata()
-        df = df[df["Swath Number"] == swath_number]
+        if args.swath_number is not None:
+            swath_number = int(args.swath_number)
+            df = df[df["Swath Number"] == swath_number]
         ephemeris = sentinel1decoder.utilities.read_subcommed_data(df)
         index = df.index[df["SAS SSB Flag"].diff() == -1].tolist()[0]
         
