@@ -193,47 +193,84 @@ class RD:
             result = np.fft.ifft(result)
             self.az_compressed_data[:, az_line_index] = result
 
-    def plot_img(self):
+    def plot_img(self, img, vmin=0, vmax=2000):
         # Plot final image
-        plt.figure(figsize=(16,100))
+        plt.figure(figsize=(16,30))
         plt.title("Sentinel-1 Processed SAR Image")
-        plt.imshow(abs(self.az_compressed_data[:,:]), vmin=0, vmax=2000, origin='lower')
+        plt.imshow(abs(img), vmin=vmin, vmax=vmax, origin='lower')
         plt.xlabel("Down Range (samples)")
         plt.ylabel("Cross Range (samples)")
         plt.show()
         
     def process(self):
         """Main processing method."""
-        print("Step 1/15: Decoding file...")
+        print("Step 1/14: Decoding file...")
         self.decode_file()
-        print("Step 2/15: Extracting parameters...")
+        print("Step 2/14: Extracting parameters...")
         self.extract_parameters()
-        print("Step 3/15: Calculating wavelength...")
+        print("Step 3/14: Calculating wavelength...")
         self.calculate_wavelength()
-        print("Step 4/15: Calculating sample rates...")
+        print("Step 4/14: Calculating sample rates...")
         self.calculate_sample_rates()
-        print("Step 5/15: Creating fast time vector...")
+        print("Step 5/14: Creating fast time vector...")
         self.create_fast_time_vector()
-        print("Step 6/15: Calculating slant range...")
+        print("Step 6/14: Calculating slant range...")
         self.calculate_slant_range()
-        print("Step 7/15: Calculating axes...")
+        print("Step 7/14: Calculating axes...")
         self.calculate_axes()
-        print("Step 8/15: Calculating spacecraft velocity...")
+        print("Step 8/14: Calculating spacecraft velocity...")
         self.calculate_spacecraft_velocity()
-        print("Step 9/15: Calculating positions...")
+        print("Step 9/14: Calculating positions...")
         self.calculate_positions()
-        print("Step 10/15: Calculating velocity and d...")
+        print("Step 10/14: Calculating velocity and d...")
         self.calculate_velocity_and_d()
-        print("Step 11/15: Processing frequency domain data...")
+        print("Step 11/14: Processing frequency domain data...")
         self.process_freq_domain_data()
-        print("Step 12/15: Applying range filter...")
+        print("Step 12/14: Applying range filter...")
         self.apply_range_filter()
-        print("Step 13/15: Applying RCMC filter...")
+        print("Step 13/14: Applying RCMC filter...")
         self.apply_rcmc_filter()
-        print("Step 14/15: Applying azimuth filter...")
+        print("Step 14/14: Applying azimuth filter...")
         self.apply_azimuth_filter()
-        print("Step 15/15: Plotting image...")
-        self.plot_img()
+        # return focused image
+        return self.az_compressed_data
+
+def get_chunks(df, column_name="SAS SSB Flag"):
+    if column_name not in df.columns:
+        raise ValueError(f"Column '{column_name}' not found in the DataFrame.")
+
+    if not df[column_name].isin([0, 1]).all():
+        raise ValueError(f"Column '{column_name}' contains values other than 0 and 1.")
+    
+    # Locate all indices where the value changes from 0 to 1
+    indices_0_to_1 = df.index[df[column_name].diff() == 1].tolist()
+
+    # Locate all indices where the value changes from 1 to 0
+    indices_1_to_0 = df.index[df[column_name].diff() == -1].tolist()
+
+    # Ensure the lists of indices have the same length by discarding extra indices
+    if len(indices_0_to_1) > len(indices_1_to_0):
+        indices_0_to_1 = indices_0_to_1[:len(indices_1_to_0)]
+    elif len(indices_1_to_0) > len(indices_0_to_1):
+        indices_1_to_0 = indices_1_to_0[:len(indices_0_to_1)]
+
+    # Divide the DataFrame into chunks where there are no 1s
+    chunks = []
+    start_idx = 0
+
+    for idx_0_to_1, idx_1_to_0 in zip(indices_0_to_1, indices_1_to_0):
+        chunks.append(df.iloc[start_idx:idx_0_to_1])
+        start_idx = idx_1_to_0 + 1
+
+    # Add the last chunk if there's any
+    if start_idx < len(df):
+        chunks.append(df.iloc[start_idx:])
+        
+    # Print the chunks
+    for i, chunk in enumerate(chunks):
+        print(f"Chunk {i + 1}:\n{len(chunk)}\n")
+    
+    return chunks
 
 
 
