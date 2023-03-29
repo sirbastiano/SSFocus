@@ -222,30 +222,32 @@ class RD:
 
 
 if __name__ == "__main__":
-       # Create argument parser
-       parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder")
-       parser.add_argument("--input_file", help="Input file")
-       parser.add_argument("--swath_number", help="Swath number")
-       
-       try:
-           args = parser.parse_args()
-       except:
-           logging.error("Wrong arguments")
-           sys.exit(1)
-       logging.info("Arguments have been parsed")
-       
-       input_file = args.input_file
-       swath_number = int(args.swath_number)
-       
-       
-       # Create object
-       decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
-       df = decoder.decode_metadata()
-       df[df["Swath Number"] == swath_number]
-       ephemeris = sentinel1decoder.utilities.read_subcommed_data(df)
-       # TODO: script to check the shapes of the dataframes
-       selection = df.iloc[50:1000]  # from 61 it works
-       RangeDoppler = RD(decoder, selection, ephemeris)
-       logging.info(f"selected {RangeDoppler.selection.shape[0]} lines")
-       RangeDoppler.process()
-       print("Done")
+        # Create argument parser
+        parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder")
+        parser.add_argument("--input_file", help="Input file")
+        parser.add_argument("--swath_number", help="Swath number")
+        
+        try:
+            args = parser.parse_args()
+        except:
+            logging.error("Wrong arguments")
+            sys.exit(1)
+        logging.info("Arguments have been parsed")
+        
+        input_file = args.input_file
+        swath_number = int(args.swath_number)
+        
+        
+        # Create object
+        decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
+        df = decoder.decode_metadata()
+        df = df[df["Swath Number"] == swath_number]
+        ephemeris = sentinel1decoder.utilities.read_subcommed_data(df)
+        index = df.index[df["SAS SSB Flag"].diff() == -1].tolist()[0]
+        
+        # TODO: script to check the shapes of the end of product
+        selection = df.iloc[index:index+3000]
+        RangeDoppler = RD(decoder, selection, ephemeris)
+        logging.info(f"selected {RangeDoppler.selection.shape[0]} lines")
+        RangeDoppler.process()
+        print("Done")
