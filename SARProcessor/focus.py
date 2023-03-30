@@ -9,6 +9,9 @@ import sentinel1decoder.utilities
 import logging
 from scipy.interpolate import interp1d
 import argparse
+from pathlib import Path
+import pandas as pd
+
 
 class RD:
     def __init__(self, decoder, raw, ephemeris):
@@ -279,7 +282,6 @@ if __name__ == "__main__":
         # Create argument parser
         parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder")
         parser.add_argument("--input_file", help="Input file")
-        parser.add_argument("--swath_number", help="Swath number", default=None)
         
         try:
             args = parser.parse_args()
@@ -289,18 +291,20 @@ if __name__ == "__main__":
         logging.info("Arguments have been parsed")
         
         input_file = args.input_file
-        # Create object
-        decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
-        df = decoder.decode_metadata()
-        if args.swath_number is not None:
-            swath_number = int(args.swath_number)
-            df = df[df["Swath Number"] == swath_number]
-        ephemeris = sentinel1decoder.utilities.read_subcommed_data(df)
-        index = df.index[df["SAS SSB Flag"].diff() == -1].tolist()[0]
+        filename = Path(input_file).stem
         
-        # TODO: script to check the shapes of the end of product
-        selection = df.iloc[index:index+3000]
-        RangeDoppler = RD(decoder, selection, ephemeris)
-        logging.info(f"selected {RangeDoppler.selection.shape[0]} lines")
-        RangeDoppler.process()
-        print("Done")
+        # Create objects
+        decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
+        raw_df = decoder.decode_metadata()
+        ephemeris = sentinel1decoder.utilities.read_subcommed_data(raw_df)
+        # chunks the sub-swaths
+        try:
+            chunks = get_chunks(raw_df)
+        except:
+            print(f"The chunking failed for {input_file}")
+            
+        for idx, chunk in enumerate(chunks):
+            focuser = RD(decoder=decoder, raw=chunk, ephemeris=ephemeris)
+            img_focused = focuser.process()
+            parent_dir = Path(input_file).parent
+            pd.to_pickle(img_focused, f"/home/roberto/PythonProjects/SSFocus/Data/RAW/IW/ROME/Processed/{idx}_chunk_{filename}.pkl")

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# This script installs the SARLens package and its dependencies
 
 # Check if Conda is installed
 if ! command -v conda &> /dev/null
@@ -21,5 +22,17 @@ else
     exit 1
 fi
 
+# Check if the script has been sourced
+if [ -z "$BASH_SOURCE" ]; then
+    echo "ERROR: You must source this script. Run 'source $0'"
+    exit 1
+fi
+# Check if the script is being run from the right directory
+if [ ! -f setup.py ]; then
+  echo "ERROR: Run this from the top-level directory of the repository"
+  exit 1
+fi
 # Run the setup.py script
 python setup.py develop
+# Run the config.sh script
+source runscripts/config.sh
