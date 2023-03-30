@@ -192,15 +192,6 @@ class RD:
             result = self.range_doppler_data[:, az_line_index] * this_az_filter[:]
             result = np.fft.ifft(result)
             self.az_compressed_data[:, az_line_index] = result
-
-    def plot_img(self, img, vmin=0, vmax=2000):
-        # Plot final image
-        plt.figure(figsize=(16,30))
-        plt.title("Sentinel-1 Processed SAR Image")
-        plt.imshow(abs(img), vmin=vmin, vmax=vmax, origin='lower')
-        plt.xlabel("Down Range (samples)")
-        plt.ylabel("Cross Range (samples)")
-        plt.show()
         
     def process(self):
         """Main processing method."""
@@ -272,7 +263,17 @@ def get_chunks(df, column_name="SAS SSB Flag"):
     
     return chunks
 
-
+def plot_img_focused(img, figsize=(10,30),cmap='gray', showAxis=True, vmin=0, vmax=2000, **kwargs):
+    # Plot final image
+    plt.figure(figsize=figsize)
+    plt.imshow(abs(img), vmin=vmin, vmax=vmax, origin='lower', cmap=cmap)
+    if showAxis:
+        plt.title("Sentinel-1 Processed SAR Image")
+        plt.xlabel("Down Range (samples)")
+        plt.ylabel("Cross Range (samples)")
+    else:
+        plt.axis(False)
+    plt.show()
 
 if __name__ == "__main__":
         # Create argument parser
