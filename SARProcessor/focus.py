@@ -12,14 +12,8 @@ from scipy.interpolate import interp1d
 import argparse
 from pathlib import Path
 import pandas as pd
-import configparser
 
-# Load configuration variables from a file
-config = configparser.ConfigParser()
-config.read("config.ini")
-
-SARLENS_DIR = config["DIRECTORIES"]["SARLENS_DIR"]
-
+SARLENS_DIR = os.environ["SARLENS_DIR"]
 
 class RD:
     def __init__(self, decoder, raw, ephemeris):
@@ -286,8 +280,8 @@ def plot_img_focused(img, figsize=(10,30),cmap='gray', showAxis=True, vmin=0, vm
     plt.show()
 
 if __name__ == "__main__":
-        """Example usage:
-            python SARProcessor/focus.py --input_file /home/roberto/PythonProjects/SSFocus/Data/RAW/IW/ROME/S1A_IW_RAW__0SDV_20201203T052021_20201203T052053_035517_042709_4D12.SAFE/s1a-iw-raw-s-vv-20201203t052021-20201203t052053-035517-042709.dat
+        """Example of usage:
+            python -m SARProcessor.focus.py --input_file /path/to/file --output_folder /path/to/folder
         """
         # Create a logger with the name "myapp"
         logger = logging.getLogger("Focuser")
@@ -316,6 +310,7 @@ if __name__ == "__main__":
         # Create argument parser
         parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder and Focuser")
         parser.add_argument("--input_file", help="Input file")
+        parser.add_argument("--output_folder", help="Input file")
         
         try:
             args = parser.parse_args()
@@ -350,6 +345,6 @@ if __name__ == "__main__":
             assert parent_dir.is_dir(), "The parent directory does not exist" # check if the parent directory is a directory
             logger.info("The parent directory exists") # log statement
             # create the directory if it does not exist
-            os.makedirs(f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}", exist_ok=True)            
-            pd.to_pickle(img_focused, f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}/{idx}_subswath_{filename}.pkl")
+            os.makedirs(args.output_folder, exist_ok=True)            
+            pd.to_pickle(img_focused, f"{args.output_folder}/{filename}/{idx}_subswath.pkl")
             logger.info("The sub-swath has been saved")

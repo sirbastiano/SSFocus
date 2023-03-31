@@ -38,7 +38,7 @@ The Sentinel-1 data decoding capabilities of SARLens are built upon the esteemed
 To install SARLens, simply use the following pip command:
 
 ```
-source runscripts/install.sh
+source installer/install.sh
 ```
 
 ## Usage

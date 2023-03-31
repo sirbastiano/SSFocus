@@ -2,7 +2,7 @@ import pandas as pd
 import asf_search as asf
 import argparse 
 import os, sys
-import wkt_areas
+from .wkt_areas import WKTS
 
 class RAWHandler:
     def __init__(self, wkt, start, end):
@@ -29,8 +29,8 @@ class RAWHandler:
             "processingLevel": "RAW",
             "intersectsWith": self.wkt,
             "maxResults": max_res,
-            # "beamSwath": ["IW", "S1", "S2", "S3", "S4", "S5", "S6"],
-            "beamSwath": ["S1", "S2", "S3", "S4", "S5", "S6"],
+            "beamSwath": ["IW"],
+            # "beamSwath": ["S1", "S2", "S3", "S4", "S5", "S6"], # Stripmap mode
             'start': self.start,
             'end': self.end,
         }
@@ -57,7 +57,7 @@ class RAWHandler:
             print('Error downloading results:', e)
             sys.exit(1)
     
-def download_single(wkt, start, end, username, psw, output_dir, download=False, max_res=10):
+def download_single(wkt, start, end, username, psw, output_dir, download=False, max_res=2):
         D = RAWHandler(wkt, start, end)
         df = D.search(max_res=max_res)
         print('='*50)
@@ -74,29 +74,40 @@ def download_single(wkt, start, end, username, psw, output_dir, download=False, 
 if __name__ == "__main__":
     """
     Example usage:
-        python Downloader/search.py --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/SM/" --username "username" --psw "password" --max 200 --download
+        python -m Downloader.search --all --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/IW/" --download --username "username" --psw "password" --max 20
     """    
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
     parser.add_argument("--start", help="Start date", default='2020-01-01')
     parser.add_argument("--end", help="End date", default='2020-12-31')
-    parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/')
+    parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/IW/')
     parser.add_argument("--max_res", help="Maximum number of results", default=10)
     parser.add_argument('--download', dest='download', action='store_true', help='Set to download mode')
     parser.add_argument('--all', dest='download_all', action='store_true', help='Set to all products')
 
-    parser.add_argument("--username", help="ASF username", type=str)
-    parser.add_argument("--psw", help="ASF password", type=str)
+    parser.add_argument("--username", help="ASF username", type=str, default=None)
+    parser.add_argument("--psw", help="ASF password", type=str, default=None)
     
     args = parser.parse_args()
 
+    if args.username is not None:
+        username = args.username
+        assert args.psw is not None, "Password not provided."
+        psw = args.psw
+        
+    else:
+        username, psw = os.environ["USERNAME"], os.environ["PASSWORD"]
+        print('Username:', username)
+        print('Password:', psw)
+
     if args.download_all:
+        wkt_areas = WKTS
         df_list = []
-        for key in wkt_areas.wkts:
+        for key in wkt_areas:
             print('Downloading product for:', key)
             regional_out = os.path.join(args.out, key)
-            df = download_single(wkt=wkt_areas.wkts[key], start=args.start, end=args.end, username=args.username, psw=args.psw, output_dir=regional_out, download=args.download, max_res=args.max_res)
+            df = download_single(wkt=wkt_areas[key], start=args.start, end=args.end, username=username, psw=psw, output_dir=regional_out, download=args.download, max_res=args.max_res)
             df_list.append(df)
         df = pd.concat(df_list)
         df.to_csv(os.path.join(args.out, 'all_products.csv'), index=False)
