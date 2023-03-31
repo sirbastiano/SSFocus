@@ -1,3 +1,4 @@
+import logging
 import matplotlib.pyplot as plt
 import cmath
 import numpy as np
@@ -11,6 +12,13 @@ from scipy.interpolate import interp1d
 import argparse
 from pathlib import Path
 import pandas as pd
+import configparser
+
+# Load configuration variables from a file
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+SARLENS_DIR = config["DIRECTORIES"]["SARLENS_DIR"]
 
 
 class RD:
@@ -279,16 +287,43 @@ def plot_img_focused(img, figsize=(10,30),cmap='gray', showAxis=True, vmin=0, vm
     plt.show()
 
 if __name__ == "__main__":
+        """Example usage:
+            python SARProcessor/focus.py --input_file /home/roberto/PythonProjects/SSFocus/Data/RAW/IW/ROME/S1A_IW_RAW__0SDV_20201203T052021_20201203T052053_035517_042709_4D12.SAFE/s1a-iw-raw-s-vv-20201203t052021-20201203t052053-035517-042709.dat
+        """
+        # Create a logger with the name "myapp"
+        logger = logging.getLogger("Focuser")
+
+        # Set the logging level to INFO
+        logger.setLevel(logging.INFO)
+
+        # Create a file handler and set its logging level to INFO
+        file_handler = logging.FileHandler("focusing.log")
+        file_handler.setLevel(logging.INFO)
+
+        # Create a console handler and set its logging level to DEBUG
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+
+        # Define a formatter for the handlers
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        # Add the handlers to the logger
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+        
+        
         # Create argument parser
-        parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder")
+        parser = argparse.ArgumentParser(description="Sentinel-1 Level 0 Decoder and Focuser")
         parser.add_argument("--input_file", help="Input file")
         
         try:
             args = parser.parse_args()
         except:
-            logging.error("Wrong arguments")
+            logger.critical("Wrong arguments")
             sys.exit(1)
-        logging.info("Arguments have been parsed")
+        logger.info("Arguments have been parsed")
         
         input_file = args.input_file
         filename = Path(input_file).stem
@@ -297,14 +332,24 @@ if __name__ == "__main__":
         decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
         raw_df = decoder.decode_metadata()
         ephemeris = sentinel1decoder.utilities.read_subcommed_data(raw_df)
+        logger.info("Decoding Objects have been created")
+        
         # chunks the sub-swaths
         try:
             chunks = get_chunks(raw_df)
         except:
             print(f"The chunking failed for {input_file}")
+            logger.critical(f"The chunking failed for {input_file}")
+            sys.exit(1)
             
         for idx, chunk in enumerate(chunks):
             focuser = RD(decoder=decoder, raw=chunk, ephemeris=ephemeris)
             img_focused = focuser.process()
-            parent_dir = Path(input_file).parent
-            pd.to_pickle(img_focused, f"/home/roberto/PythonProjects/SSFocus/Data/RAW/IW/ROME/Processed/{idx}_chunk_{filename}.pkl")
+            parent_dir = Path(input_file).parent.parent
+            
+            logger.info("Checking if the parent directory exists") # log statement
+            assert parent_dir.is_dir(), "The parent directory does not exist" # check if the parent directory is a directory
+            logger.info("The parent directory exists") # log statement
+            # create the directory if it does not exist
+            os.makedirs(f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}", exist_ok=True)            
+            pd.to_pickle(img_focused, f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}/{idx}_subswath_{filename}.pkl")
