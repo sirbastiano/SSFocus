@@ -346,5 +346,5 @@ if __name__ == "__main__":
             logger.info("The parent directory exists") # log statement
             # create the directory if it does not exist
             os.makedirs(args.output_folder, exist_ok=True)            
-            pd.to_pickle(img_focused, f"{args.output_folder}/{filename}/{idx}_subswath.pkl")
+            pd.to_pickle(img_focused, f"{args.output_folder}/{idx}_subswath.pkl")
             logger.info("The sub-swath has been saved")
