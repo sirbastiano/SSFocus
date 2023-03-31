@@ -194,10 +194,9 @@ class RD:
         self.az_compressed_data = np.zeros((self.len_az_line, self.len_range_line), 'complex')
 
         for az_line_index in range(self.len_range_line):
-            d_vector = np.zeros(self.len_az_line)
-            
+            # d_vector = np.zeros(self.len_az_line)
             this_az_filter = np.zeros(self.len_az_line, 'complex')
-            for i in range(len(self.az_freq_vals) - 2):  # -1
+            for i in range(len(self.az_freq_vals) - 2): # -2 to avoid the last two values? # TODO: check this
                 this_az_filter[i] = cmath.exp(
                     (4j * cmath.pi * self.slant_range[i] * self.D[i, az_line_index]) / self.wavelength)
             result = self.range_doppler_data[:, az_line_index] * this_az_filter[:]
@@ -206,33 +205,33 @@ class RD:
         
     def process(self):
         """Main processing method."""
-        print("Step 1/14: Decoding file...")
+        logger.info("Step 1/14: Decoding file...")
         self.decode_file()
-        print("Step 2/14: Extracting parameters...")
+        logger.info("Step 2/14: Extracting parameters...")
         self.extract_parameters()
-        print("Step 3/14: Calculating wavelength...")
+        logger.info("Step 3/14: Calculating wavelength...")
         self.calculate_wavelength()
-        print("Step 4/14: Calculating sample rates...")
+        logger.info("Step 4/14: Calculating sample rates...")
         self.calculate_sample_rates()
-        print("Step 5/14: Creating fast time vector...")
+        logger.info("Step 5/14: Creating fast time vector...")
         self.create_fast_time_vector()
-        print("Step 6/14: Calculating slant range...")
+        logger.info("Step 6/14: Calculating slant range...")
         self.calculate_slant_range()
-        print("Step 7/14: Calculating axes...")
+        logger.info("Step 7/14: Calculating axes...")
         self.calculate_axes()
-        print("Step 8/14: Calculating spacecraft velocity...")
+        logger.info("Step 8/14: Calculating spacecraft velocity...")
         self.calculate_spacecraft_velocity()
-        print("Step 9/14: Calculating positions...")
+        logger.info("Step 9/14: Calculating positions...")
         self.calculate_positions()
-        print("Step 10/14: Calculating velocity and d...")
+        logger.info("Step 10/14: Calculating velocity and d...")
         self.calculate_velocity_and_d()
-        print("Step 11/14: Processing frequency domain data...")
+        logger.info("Step 11/14: Processing frequency domain data...")
         self.process_freq_domain_data()
-        print("Step 12/14: Applying range filter...")
+        logger.info("Step 12/14: Applying range filter...")
         self.apply_range_filter()
-        print("Step 13/14: Applying RCMC filter...")
+        logger.info("Step 13/14: Applying RCMC filter...")
         self.apply_rcmc_filter()
-        print("Step 14/14: Applying azimuth filter...")
+        logger.info("Step 14/14: Applying azimuth filter...")
         self.apply_azimuth_filter()
         # return focused image
         return self.az_compressed_data
@@ -353,3 +352,4 @@ if __name__ == "__main__":
             # create the directory if it does not exist
             os.makedirs(f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}", exist_ok=True)            
             pd.to_pickle(img_focused, f"{SARLENS_DIR}/Data/FOCUSED/IW/{parent_dir.name}/{filename}/{idx}_subswath_{filename}.pkl")
+            logger.info("The sub-swath has been saved")

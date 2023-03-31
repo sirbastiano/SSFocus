@@ -133,4 +133,5 @@ Data/*
 *.DS_Store
 
 # Configuration
+*.ini
 config.ini
