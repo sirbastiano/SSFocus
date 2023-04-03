@@ -1,6 +1,6 @@
 
-INPUT_PRODUCT=/home/roberto/PythonProjects/SSFocus/Data/RAW/IW/S1A_IW_RAW__0SDV_20200101T061918_20200101T061951_030603_038187_6068.SAFE/s1a-iw-raw-s-vv-20200101t061918-20200101t061951-030603-038187.dat
-OUTPUT_DIR=/home/roberto/PythonProjects/SSFocus/Data/FOCUSED/IW/Test
+INPUT_PRODUCT=/home/roberto/PythonProjects/SSFocus/Data/RAW/IW/ATENE/S1A_IW_RAW__0SDV_20200102T162318_20200102T162351_030624_038242_4CBE.SAFE/s1a-iw-raw-s-vh-20200102t162318-20200102t162351-030624-038242.dat
+OUTPUT_DIR=/home/roberto/PythonProjects/SSFocus/Data/FOCUSED/IW/ATENE/
 
 echo "Focusing product $INPUT_PRODUCT"
 
@@ -37,7 +37,7 @@ if [ ! -d "$OUTPUT_DIR" ]; then
   mkdir -p "$OUTPUT_DIR"
 fi
 
-echo "=== Start focus ==="
+echo "========= Start focus ========="
 python -m SARProcessor.focus --input $INPUT_PRODUCT --output $OUTPUT_DIR
-echo "=== End focus ==="
+echo "========= End focus ========="
 
