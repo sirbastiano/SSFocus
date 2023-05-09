@@ -268,15 +268,18 @@ class RDTorch:
 
     def extract_parameters(self):
         """Extract necessary parameters from the selection dataframe."""
+        
+        # TODO: check if these are the correct parameters to use nominal ones Sec 9.2.2.2
+        # TODO: if flag is set to 1, use the nominal values.
         self.c = sentinel1decoder.constants.speed_of_light
-        self.TXPL = self.selection["Tx Pulse Length"].unique()[0]
-        self.TXPSF = self.selection["Tx Pulse Start Frequency"].unique()[0]
-        self.TXPRR = self.selection["Tx Ramp Rate"].unique()[0]
-        self.RGDEC = self.selection["Range Decimation"].unique()[0]
-        self.PRI = self.selection["PRI"].unique()[0]
-        self.rank = self.selection["Rank"].unique()[0]
-        self.suppressed_data_time = 320 / (8 * sentinel1decoder.constants.f_ref)
-        self.range_start_time = self.selection["SWST"].unique()[0] + self.suppressed_data_time
+        self.TXPL = self.selection["Tx Pulse Length"].unique()[0] # Transmit pulse length [s]
+        self.TXPSF = self.selection["Tx Pulse Start Frequency"].unique()[0] # Transmit pulse start frequency [Hz]
+        self.TXPRR = self.selection["Tx Ramp Rate"].unique()[0] # Transmit pulse ramp rate [Hz/s]
+        self.RGDEC = self.selection["Range Decimation"].unique()[0] # Range decimation
+        self.PRI = self.selection["PRI"].unique()[0] # Pulse repetition interval [s]
+        self.rank = self.selection["Rank"].unique()[0] # Rank of the data
+        self.suppressed_data_time = 320 / (8 * sentinel1decoder.constants.f_ref) # Suppressed data time [s]
+        self.range_start_time = self.selection["SWST"].unique()[0] + self.suppressed_data_time # Range start time [s]
 
     def calculate_wavelength(self):
         """Calculate the SAR radar wavelength."""
@@ -313,7 +316,7 @@ class RDTorch:
         self.D = np.zeros((self.len_az_line, self.len_range_line))
 
         ecef_vels = self.ephemeris.apply(lambda x: math.sqrt(
-            x["X-axis velocity ECEF"] ** 2 + x["Y-axis velocity ECEF"] ** 2 + x["Z-axis velocity ECEF"] ** 2), axis=1)
+                x["X-axis velocity ECEF"] ** 2 + x["Y-axis velocity ECEF"] ** 2 + x["Z-axis velocity ECEF"] ** 2), axis=1)
         velocity_interp = interp1d(self.ephemeris["POD Solution Data Timestamp"].unique(), ecef_vels.unique(),
                                    fill_value="extrapolate")
         self.x_interp = interp1d(self.ephemeris["POD Solution Data Timestamp"].unique(), self.ephemeris["X-axis position ECEF"].unique(),
@@ -351,7 +354,7 @@ class RDTorch:
                 self.D[i, j] = self.d(self.az_freq_vals[i], self.velocities[i, j], self.wavelength)
 
     def process_freq_domain_data(self):
-        """Process frequency domain data."""
+        """Process time data to create the frequency domain data."""
         self.freq_domain_data = np.zeros((self.len_az_line, self.len_range_line), dtype=complex)
 
         for az_index in range(self.len_az_line):
@@ -372,9 +375,14 @@ class RDTorch:
         tx_replica_time_vals = np.linspace(-self.TXPL / 2, self.TXPL / 2, num=num_tx_vals)
         phi1 = self.TXPSF + self.TXPRR * self.TXPL / 2
         phi2 = self.TXPRR / 2
-        tx_replica = np.zeros(num_tx_vals, dtype=complex)
-        for i in range(num_tx_vals):
-            tx_replica[i] = cmath.exp(2j * cmath.pi * (phi1 * tx_replica_time_vals[i] + phi2 * tx_replica_time_vals[i] ** 2))
+        tx_replica = np.zeros(num_tx_vals, dtype=complex) 
+        # OLD CODE:
+                # for i in range(num_tx_vals):
+                    # tx_replica[i] = cmath.exp(2j * cmath.pi * (phi1 * tx_replica_time_vals[i] + phi2 * tx_replica_time_vals[i] ** 2))
+        
+        # Nominal Image Replica (4-24)
+        tx_replica = 1/len(num_tx_vals) * np.exp(2j * np.pi * (phi1 * tx_replica_time_vals + phi2 * tx_replica_time_vals ** 2))
+
 
         range_filter = np.zeros(self.len_range_line, dtype=complex)
         index_start = np.ceil((self.len_range_line - num_tx_vals) / 2) - 1
