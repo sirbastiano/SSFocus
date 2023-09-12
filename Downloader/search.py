@@ -7,9 +7,21 @@ from .wkt_areas import WKTS
 class RAWHandler:
     def __init__(self, wkt, start, end):
         # Initialize the object and set the values of the attributes
-        self.wkt = wkt        
-        self.start = self.date_check(start)
-        self.end = self.date_check(end)
+        self.wkt = wkt
+        self.start = start
+        self.end = end
+        
+        print('Start date:', self.start)
+        print('End date:', self.end)
+        
+        if self.start is not None:        
+            self.start = self.date_check(start)
+        else: 
+            print('Start date provided not useful.')
+        if self.end is not None:
+            self.end = self.date_check(end)
+        else:
+            print('End date provided not useful.')
         self.results = None
     
     @staticmethod
@@ -26,17 +38,21 @@ class RAWHandler:
         # Set search parameters
         search_parameters = {
             "platform": "Sentinel-1",
-            "processingLevel": "RAW",
+            "processingLevel": "SLC",
+            "instrument": "C-SAR",
             "intersectsWith": self.wkt,
             "maxResults": max_res,
-            "beamSwath": ["IW"],
-            # "beamSwath": ["S1", "S2", "S3", "S4", "S5", "S6"], # Stripmap mode
-            'start': self.start,
-            'end': self.end,
+            # "beamSwath": ["IW"],
+            "beamSwath": ["S1", "S2", "S3", "S4", "S5", "S6"], # Stripmap mode
         }
+        if args.start is not None:
+            search_parameters['start'] = self.start
+        if args.end is not None:
+            search_parameters['end'] = self.end
 
         try:
-            results = asf.geo_search(**search_parameters)
+            # results = asf.geo_search(**search_parameters)
+            results = asf.search(**search_parameters)
             self.results = results
         except Exception:
             print("No results found.")
@@ -74,13 +90,13 @@ def download_single(wkt, start, end, username, psw, output_dir, download=False, 
 if __name__ == "__main__":
     """
     Example usage:
-        python -m Downloader.search --all --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/IW/" --download --username "username" --psw "password" --max 20
+        python -m Downloader.search --all --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/IW/" --download --max 2
     """    
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
-    parser.add_argument("--start", help="Start date", default='2020-01-01')
-    parser.add_argument("--end", help="End date", default='2020-12-31')
+    parser.add_argument("--start", help="Start date", default=None)
+    parser.add_argument("--end", help="End date", default=None)
     parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/IW/')
     parser.add_argument("--max_res", help="Maximum number of results", default=10)
     parser.add_argument('--download', dest='download', action='store_true', help='Set to download mode')
