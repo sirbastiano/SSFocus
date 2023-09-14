@@ -3,6 +3,7 @@ import os
 import subprocess
 import platform
 
+
 def is_linux():
     print("Platform system: ",platform.system())
     return platform.system() == 'Linux'
