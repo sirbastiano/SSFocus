@@ -30,4 +30,4 @@ fi
 
 clear
 # Run the script
-python -m Downloader.search --out "./Data/RAW/SM/" --max 750 --wkt 'POLYGON((-16.6346 22.2274,54.5568 22.2274,54.5568 61.0792,-16.6346 61.0792,-16.6346 22.2274))'
+python -m Downloader.search --out "./Data/RAW/SM/" --max_res 2 --wkt 'POLYGON((-16.6346 22.2274,54.5568 22.2274,54.5568 61.0792,-16.6346 61.0792,-16.6346 22.2274))' --download_all

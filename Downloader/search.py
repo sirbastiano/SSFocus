@@ -5,7 +5,7 @@ import os, sys
 from .wkt_areas import WKTS
 
 class RAWHandler:
-    def __init__(self, wkt, start, end):
+    def __init__(self, wkt: str = None, start: str = None, end: str = None):
         # Initialize the object and set the values of the attributes
         self.wkt = wkt
         self.start = start
@@ -54,6 +54,7 @@ class RAWHandler:
             # results = asf.geo_search(**search_parameters)
             results = asf.search(**search_parameters)
             self.results = results
+            print('Search results:', results)
         except Exception:
             print("No results found.")
             sys.exit(1)
@@ -90,17 +91,16 @@ def download_single(wkt, start, end, username, psw, output_dir, download=False, 
 if __name__ == "__main__":
     """
     Example usage:
-        python -m Downloader.search --all --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/IW/" --download --max 2
+        python -m Downloader.search --all --start "2020-01-01" --end "2022-12-31" --out "./Data/RAW/SM/" --download --max 2
     """    
     # Set search parameters with argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--wkt", help="WKT polygon to search", default='POLYGON((11.859924690893369 41.87951862335169,12.679779427221494 41.87951862335169,12.679779427221494 41.361079422445385,11.859924690893369 41.361079422445385,11.859924690893369 41.87951862335169))')
     parser.add_argument("--start", help="Start date", default=None)
     parser.add_argument("--end", help="End date", default=None)
-    parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/IW/')
+    parser.add_argument("--out", help="Output folder of products", default='./Data/RAW/SM/')
     parser.add_argument("--max_res", help="Maximum number of results", default=10)
-    parser.add_argument('--download', dest='download', action='store_true', help='Set to download mode')
-    parser.add_argument('--all', dest='download_all', action='store_true', help='Set to all products')
+    parser.add_argument('--download_all', dest='download_all', action='store_true', help='Set to all products')
 
     parser.add_argument("--username", help="ASF username", type=str, default=None)
     parser.add_argument("--psw", help="ASF password", type=str, default=None)
@@ -118,19 +118,6 @@ if __name__ == "__main__":
         print('Password:', psw)
 
     if args.download_all:
-        wkt_areas = WKTS
-        df_list = []
-        for key in wkt_areas:
-            print('Downloading product for:', key)
-            regional_out = os.path.join(args.out, key)
-            df = download_single(wkt=wkt_areas[key], start=args.start, end=args.end, username=username, psw=psw, output_dir=regional_out, download=args.download, max_res=args.max_res)
-            df_list.append(df)
-        df = pd.concat(df_list)
-        df.to_csv(os.path.join(args.out, 'all_products.csv'), index=False)
-    else:
-        df = download_single(wkt=args.wkt, start=args.start, end=args.end, username=args.username, psw=args.psw, output_dir=args.out, download=args.download, max_res=args.max_res)
-        df.to_csv(os.path.join(args.out, 'all_products.csv'), index=False)
-
-          
-    
-    
+        caller = RAWHandler(wkt=args.wkt)
+        df = caller.search(max_res=args.max_res)
+        caller.download(username, psw, args.out)
