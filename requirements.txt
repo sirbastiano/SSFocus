@@ -1,0 +1,20 @@
+h5py
+netcdf4
+h5netcdf
+rasterio
+rioxarray
+numpy
+scikit-image
+scipy
+scikit-learn
+xarray
+geopandas
+pandas>=1.4, <2
+asf_search
+matplotlib
+seaborn
+tqdm
+tzlocal
+regex
+opencv
+gdal

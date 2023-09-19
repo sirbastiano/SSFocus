@@ -1,9 +1,3 @@
-
-INPUT_PRODUCT=/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/Extracted/S1A_S1_RAW__0SSV_20200110T183210_20200110T183241_030742_038657_8CCA.SAFE/s1a-s1-raw-s-vv-20200110t183210-20200110t183241-030742-038657.dat
-OUTPUT_DIR=/home/roberto/PythonProjects/SSFocus/Data/FOCUSED/SM/S1A_S1_RAW__0SSV_20200110T183210_20200110T183241_030742_038657_8CCA
-
-echo "Focusing product $INPUT_PRODUCT"
-
 # Check if Conda is installed
 if ! command -v conda &> /dev/null
 then
@@ -32,12 +26,26 @@ if [ ! -f setup.py ]; then
   exit 1
 fi
 
-# check if output directory exists, else create it:
-if [ ! -d "$OUTPUT_DIR" ]; then
-  mkdir -p "$OUTPUT_DIR"
-fi
+INPUT_PRODUCT=/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/S1A_S1_SLC__1SSV_20200930T183218_20200930T183248_034592_0406FD_1E25.zip
+# use the same folder of INPUT_PRODUCT, split the name:
+OUTPUT_DIR=$(dirname $INPUT_PRODUCT)/$(basename $INPUT_PRODUCT .zip)
+echo "Output directory is:" $OUTPUT_DIR
 
-echo "========= Start focus ========="
-python -m SARProcessor.focus --input $INPUT_PRODUCT --output $OUTPUT_DIR
-echo "========= End focus ========="
+
+echo "Unzipping product $INPUT_PRODUCT"
+unzip $INPUT_PRODUCT -d $OUTPUT_DIR 
+# delete the zipfile:
+rm $INPUT_PRODUCT
+echo "Unzipping done, deleted $INPUT_PRODUCT"
+
+echo "Focusing product $INPUT_PRODUCT"
+FOCUS_DIR=/home/roberto/PythonProjects/SSFocus/Data/RAW/FOCUSED
+# # check if output directory exists, else create it:
+# if [ ! -d "$OUTPUT_DIR" ]; then
+#   mkdir -p "$OUTPUT_DIR"
+# fi
+
+# echo "========= Start focus ========="
+# python -m SARProcessor.focus --input $INPUT_PRODUCT --output $OUTPUT_DIR
+# echo "========= End focus ========="
 

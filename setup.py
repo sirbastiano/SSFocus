@@ -3,6 +3,8 @@ import os
 import subprocess
 import platform
 
+with open("./requirements.txt", "r") as f:
+    install_requires = f.read().split("\n")
 
 def is_linux():
     print("Platform system: ",platform.system())
@@ -26,6 +28,9 @@ def install_dependencies():
         
     subprocess.check_call(["pip", "install", "git+https://github.com/Rich-Hall/sentinel1decoder"])
 
+
+
+
 install_dependencies()
 
 setup(
@@ -35,26 +40,7 @@ setup(
     author='Roberto Del Prete',
     author_email='roberto.delprete@ext.esa.int',
     packages=find_packages(),
-    install_requires=[
-              'h5py',
-              'netcdf4',
-              'h5netcdf',
-              'rasterio',
-              'rioxarray',
-              'numpy',
-              'scikit-image',
-              'scipy',
-              'scikit-learn',
-              'xarray',
-              'geopandas',
-              'pandas>=1.4, <2',
-              'asf_search',
-              'matplotlib',
-              'seaborn',
-              'tqdm',
-              'tzlocal',
-              'regex',
-       ],
+    install_requires=install_requires,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',

@@ -555,13 +555,13 @@ if __name__ == "__main__":
         
         # Create objects
         decoder = sentinel1decoder.Level0Decoder(input_file, log_level=logging.WARNING)
-        raw_df = decoder.decode_metadata()
-        ephemeris = sentinel1decoder.utilities.read_subcommed_data(raw_df)
+        raw_meta_df = decoder.decode_metadata()
+        ephemeris = sentinel1decoder.utilities.read_subcommed_data(raw_meta_df)
         logger.info("Decoding Objects have been created")
         
         # chunks the sub-swaths
         try:
-            chunks = get_chunks(raw_df)
+            chunks = get_chunks(raw_meta_df)
         except:
             print(f"The chunking failed for {input_file}")
             logger.critical(f"The chunking failed for {input_file}")
