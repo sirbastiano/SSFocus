@@ -48,8 +48,10 @@ for product in ${data_products[@]}; do
     ephemeris=$(echo $product | sed 's/.npy/_ephemeris.pkl/g')
     echo "Ephemeris file is:" $ephemeris
 
-    # echo "python -m SARProcessor.focus --data $product --meta $meta --ephemeris $ephemeris --output $OUTPUT_DIR --backend "numpy""
-    # python -m SARProcessor.focus --data $product --meta $meta --ephemeris $ephemeris --output $OUTPUT_DIR --backend "numpy"
+
+    idx_chunk=1
+    echo "python -m SARProcessor.focus --data $product --meta $meta --ephemeris $ephemeris --output $OUTPUT_DIR --backend "numpy""
+    # python -m SARProcessor.focus --data $product --meta $meta --ephemeris $ephemeris --output $OUTPUT_DIR --backend "numpy" --idx_chunk $idx_chunk
 done
 echo "========= End focus ========="
 

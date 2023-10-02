@@ -9,6 +9,13 @@ import math
 import torch
 from pathlib import Path 
 import copy 
+import gc
+# check ram usage:
+import psutil
+
+def printmemory():
+    print(f'RAM memory usage: {psutil.virtual_memory().percent}%')
+    return
 
 # global variables:
 global device, slant_range_vec, D, c, len_range_line, range_sample_freq, wavelength
@@ -28,8 +35,6 @@ def fft2D(radar_data: np.array, backend: str = 'numpy', print_status: bool = Tru
     Returns:
         np.array: 2D numpy array of radar data after 2D FFT.
     """
-    if print_status:
-        print(f'Performing 2D FFT with {backend}...')
     
     if backend == 'numpy':
         # FFT each range line
@@ -50,7 +55,7 @@ def fft2D(radar_data: np.array, backend: str = 'numpy', print_status: bool = Tru
         print('- FFT performed successfully!')
     return radar_data
 
-def get_range_filter(radar_data_shape: tuple, metadata: pd.DataFrame, ephemeris: pd.DataFrame) -> np.ndarray:
+def get_range_filter(metadata: pd.DataFrame, ephemeris: pd.DataFrame) -> np.ndarray:
     """
     Computes a range filter for radar data, specifically tailored to Sentinel-1 radar parameters.
 
@@ -73,11 +78,8 @@ def get_range_filter(radar_data_shape: tuple, metadata: pd.DataFrame, ephemeris:
         ephemeris = pd.DataFrame({"POD Solution Data Timestamp": [...], "X-axis velocity ECEF": [...], ...})
         range_filter = get_range_filter(radar_data_shape, metadata, ephemeris)
     """
-
-    # Image sizes
-    len_range_line = radar_data_shape[1]
-    len_az_line = radar_data_shape[0]
-
+    global device, slant_range_vec, D, c, len_range_line, range_sample_freq, wavelength
+    
     # Tx pulse parameters
     c = sentinel1decoder.constants.SPEED_OF_LIGHT_MPS
     RGDEC = metadata["Range Decimation"].unique()[0]
@@ -171,6 +173,8 @@ def get_RDMC(metadata: pd.DataFrame):
     Returns:
         np.array: 1D numpy array representing the RCMC filter.
     """
+    global device, slant_range_vec, D, c, len_range_line, range_sample_freq, wavelength
+    
     RGDEC = metadata["Range Decimation"].unique()[0]
     range_sample_freq = sentinel1decoder.utilities.range_dec_to_sample_rate(RGDEC)
     # Create RCMC filter
@@ -180,11 +184,12 @@ def get_RDMC(metadata: pd.DataFrame):
     return rcmc_filter
     
 def get_azimuth_filter():
+    global slant_range_vec, D, wavelength
     # Create filter
     az_filter = np.exp(4j * np.pi * slant_range_vec * D / wavelength)
     return az_filter
 
-def multiply(a, b, backend='numpy'):
+def multiply(a, b, backend: str ='numpy'):
     """
     Multiply two complex-valued arrays.
 
@@ -206,16 +211,26 @@ def multiply(a, b, backend='numpy'):
     else:
         raise ValueError('Backend not supported.')
     
-
-# divide the data into 5 parts
+# divide the data into 10 parts:
 def get_partition(data_path: str = 'path/to/*.npy', ephem_path: str = 'path/to/ephem_file', meta_path: str = 'path/to/metafile', num_chunks: int = 5, idx_chunk: int = 0):
     """
-    Function to get a partition of the data
-    :param data_path: path to the data
-    :param num_chunks: number of chunks
-    :param idx_chunk: index of the chunk
+    Get a partition of the data from a numpy file and corresponding metadata and ephemeris files.
+
+    Args:
+        data_path (str): Path to the numpy data file.
+        ephem_path (str): Path to the ephemeris file.
+        meta_path (str): Path to the metadata file.
+        num_chunks (int): Number of chunks to divide the data into.
+        idx_chunk (int): Index of the chunk to load.
+
+    Returns:
+        tuple: A tuple containing the partition of the data, metadata, and ephemeris.
     """
+    global len_az_line, len_range_line
     data = np.load(data_path)
+    # Image sizes
+    len_range_line = data[1]
+    len_az_line = data[0]
     start = int(idx_chunk * data.shape[0] / num_chunks)
     end = int((idx_chunk + 1) * data.shape[0] / num_chunks)
     partition = data[start:end, :]
@@ -226,11 +241,13 @@ def get_partition(data_path: str = 'path/to/*.npy', ephem_path: str = 'path/to/e
     
     meta = pd.read_pickle(meta_path)[start:end]
     ephemeris = pd.read_pickle(ephem_path)[start:end]
-    
+    print('- Data loaded successfully!')
     return copy_partition, meta, ephemeris
 
+def picklesavefile(path, datafile):
+    with open(path, 'wb') as f:
+        pickle.dump(datafile, f)
 
- 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SAR Processor')
@@ -239,33 +256,35 @@ if __name__ == '__main__':
     parser.add_argument('--ephemeris', type=str, default='radar_data.npy', help='path to the radar data')
     parser.add_argument('--output', type=str, default='outputdir', help='path to the focused radar data')
     parser.add_argument('--backend', type=str, default='numpy', help='backend used to process data')
-    parser.add_argument('--num_chunks', type=int, default=10, help='Number of chunks to parse the SAR data')
-
+    parser.add_argument('--num_chunks', type=int, default=15, help='Number of chunks to parse the SAR data')
+    parser.add_argument('--idx_chunk', type=int, default=0, help='Index of the chunk to parse the SAR data')
     
-    print('\n\n***Starting SAR Processor***')
+    print('\n\n***   Starting SAR Processor   ***')
     args = parser.parse_args()
     # Load data:
     name = Path(args.data).stem
-    for idx in range(args.num_chunks):
-        print(f'Processing chunk {idx+1}/{args.num_chunks}')
-        
-        radar_data, meta, ephemeris = get_partition(data_path=args.data, ephem_path=args.ephemeris, meta_path=args.meta, num_chunks = args.num_chunks, idx_chunk=idx)
-        print('- Data loaded successfully!')
-
-        # Processing 2dfft:
-        radar_data = fft2D(radar_data, backend=args.backend)
-        # range compression:
-        range_compressed_radar_data = multiply(radar_data, get_range_filter(radar_data.shape, meta, ephemeris), backend=args.backend)
-        
-        # applt RCMC filter:
-        rcmc_filter = get_RDMC(meta)
-        rcmc_range_compressed_radar_data = multiply(range_compressed_radar_data, rcmc_filter, backend=args.backend)
-        print('- RCMC filter applied successfully!')
-        del range_compressed_radar_data
-        # Azimuth compression:
-        focused_radar_data = np.multiply(radar_data, get_azimuth_filter(), backend=args.backend)
-        print('- Azimuth compression performed successfully!')
-        del rcmc_range_compressed_radar_data
-        # Save focused radar data:
-        np.save(args.output+f'/cnk_{idx}_{name}.npy', focused_radar_data)
-        print('- Focused radar data saved successfully!')
+    idx = args.idx_chunk
+    print(f'Processing chunk {idx+1}/{args.num_chunks}')
+    printmemory()
+    radar_data, meta, ephemeris = get_partition(data_path=args.data, ephem_path=args.ephemeris, meta_path=args.meta, num_chunks = args.num_chunks, idx_chunk=idx)
+    printmemory()
+    # Processing 2dfft:
+    radar_data = fft2D(radar_data, backend=args.backend)
+    # range compression:
+    printmemory()
+    radar_data = multiply(radar_data, get_range_filter(meta, ephemeris), backend=args.backend)
+    
+    # applt RCMC filter:
+    rcmc_filter = get_RDMC(meta)
+    printmemory()
+    radar_data = multiply(radar_data, rcmc_filter, backend=args.backend)
+    print('- RCMC filter applied successfully!')
+    printmemory()
+    # Azimuth compression:
+    radar_data = multiply(radar_data, get_azimuth_filter(), backend=args.backend)
+    print('- Azimuth compression performed successfully!')
+    printmemory()
+    
+    # Save focused radar data:
+    picklesavefile(args.output+f'/cnk_{idx}_{name}.npy', radar_data)
+    print('- Focused radar data saved successfully!')
