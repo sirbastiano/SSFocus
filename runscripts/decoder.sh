@@ -59,15 +59,15 @@ numpy_dir="/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/NUM
 
 
 decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200403t183209-20200403t183240-031967-03b114.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200310t183209-20200310t183239-031617-03a4c7.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200322t183209-20200322t183240-031792-03aaec.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200415t183210-20200415t183240-032142-03b73e.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200427t183210-20200427t183241-032317-03bd63.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200825t183217-20200825t183247-034067-03f47f.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200906t183217-20200906t183248-034242-03faa1.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200918t183217-20200918t183248-034417-0400c7.dat" $numpy_dir
-decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200930t183218-20200930t183248-034592-0406fd.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200310t183209-20200310t183239-031617-03a4c7.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200322t183209-20200322t183240-031792-03aaec.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200415t183210-20200415t183240-032142-03b73e.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200427t183210-20200427t183241-032317-03bd63.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200825t183217-20200825t183247-034067-03f47f.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200906t183217-20200906t183248-034242-03faa1.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200918t183217-20200918t183248-034417-0400c7.dat" $numpy_dir
+# decode_file "/Users/robertodelprete/Desktop/PyScripts/SARLens/SSFocus/Data/RAW/DAT/s1a-s1-raw-s-vv-20200930t183218-20200930t183248-034592-0406fd.dat" $numpy_dir
 
 # check if all products have been decoded
 # list the files in output_dir and check which one is missing from zipfiles

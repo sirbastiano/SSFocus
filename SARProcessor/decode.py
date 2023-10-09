@@ -3,24 +3,44 @@ import pandas as pd
 import numpy as np
 from pathlib import Path, os
 import argparse
+import pickle
 
 global numpy_folder, dat_folder
 
 numpy_folder = '/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/numpy'
 dat_folder = '/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/dat'
 
+
+def picklesaver(outputfile, path):
+    """
+    Save a Python object as a pickle file.
+    """
+    with open(outputfile, 'wb') as f:
+        pickle.dump(path, f)
+    
+
 def split_radar_data(radar_data, L0_name, num_chunks: int = 10):
     """
     Split radar data into chunks to avoid memory overload and then save the chunks as numpy arrays
     """
-    global numpy_folder, dat_folder
-    
-    n = len(radar_data)
-    chunk_size = n // num_chunks
-    for i in range(num_chunks):
-        chunk = radar_data[i*chunk_size:(i+1)*chunk_size]
-        np.save(os.path.join(numpy_folder, f'{L0_name}_chunk_{i+1}.npy'), chunk)
-    return None
+    global numpy_folder
+    try:
+        n = len(radar_data)
+        chunk_size = n // num_chunks
+        for i in range(num_chunks):
+            chunk = radar_data[i*chunk_size:(i+1)*chunk_size]
+            outpath = os.path.join(numpy_folder, f'{L0_name}_chunk_{i+1}.pkl')
+            picklesaver(outpath, chunk)
+        return None
+    except:
+        print('Error splitting radar data. Retrying...')
+        n = len(radar_data)
+        chunk_size = n // num_chunks
+        for i in range(num_chunks):
+            chunk = radar_data[i*chunk_size:(i+1)*chunk_size]
+            outpath = os.path.join(numpy_folder, f'{L0_name}_chunk_{i+1}.pkl')
+            picklesaver(outpath, chunk)
+        return None
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description of your program')
