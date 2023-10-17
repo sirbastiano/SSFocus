@@ -54,19 +54,22 @@ class SpectrumAttentionBlock(nn.Module):
             
 
 
-
 # Define the PhiNet model with multi-branch architecture
 class PhiNet(nn.Module):
-    def __init__(self, conv_channels_list=[1, 64, 128, 256], expand_channels: int = 12):
+    def __init__(self, conv_channels_list=[2, 64, 128, 256], expand_channels: int = 12, use_SA: bool = True):
         super(PhiNet, self).__init__()
         
         assert len(conv_channels_list) == 4, "conv_channels_list must have 4 elements.."
         self.in_channels = conv_channels_list[0]
-        self.expand_channels = expand_channels
         
-        
-        # Spectrum Attention Block
-        self.attention_spectral = SpectrumAttentionBlock(in_channels=1, out_channels=expand_channels) 
+        # Spectrum Attention Block:
+        if use_SA:
+            self.expand_channels = expand_channels
+            self.attention_spectral = SpectrumAttentionBlock(in_channels=1, out_channels=expand_channels) 
+        else:
+            self.attention_spectral = nn.Identity()
+            self.expand_channels = self.in_channels
+
         # Pooling Branch
         self.pool = nn.MaxPool2d(16, 16)
         self.bn = nn.BatchNorm2d(expand_channels)
