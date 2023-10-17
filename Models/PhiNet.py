@@ -7,9 +7,6 @@ import torch.optim as optim
 import unittest
 
 
-       
-
-
 
 class FocusBlock(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
@@ -66,7 +63,8 @@ class PhiNet(nn.Module):
         
         
         # Spectrum Attention Block
-        self.attention_spectral = SpectrumAttentionBlock(in_channels=1, out_channels=expand_channels) 
+        if self.expand_channels != 1:
+            self.attention_spectral = SpectrumAttentionBlock(in_channels=1, out_channels=expand_channels) 
         # Pooling Branch
         self.pool = nn.MaxPool2d(16, 16)
         self.bn = nn.BatchNorm2d(expand_channels)
