@@ -53,20 +53,29 @@ class SpectrumAttentionBlock(nn.Module):
         return x
             
 
+class ConvBA(nn.Sequential):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True, batch_norm=True, activation=nn.ReLU(inplace=True)):
+        super().__init__()
+        self.add_module('conv', nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias))
+        if batch_norm:
+            self.add_module('bn', nn.BatchNorm2d(out_channels))
+        if activation:
+            self.add_module('activation', activation)
 
 # Define the PhiNet model with multi-branch architecture
 class PhiNet(nn.Module):
-    def __init__(self, conv_channels_list=[2, 64, 128, 256], expand_channels: int = 12, use_SA: bool = True, activation=nn.ReLU(inplace=True)):
+    def __init__(self, conv_channels_list=[2, 32, 64, 128, 256], expand_channels: int = 12, use_SA: bool = False, activation=nn.ReLU(inplace=True)):
         super(PhiNet, self).__init__()
         
-        assert len(conv_channels_list) == 4, "conv_channels_list must have 4 elements.."
+        assert len(conv_channels_list) == 5, "conv_channels_list must have 4 elements.."
         self.in_channels = conv_channels_list[0]
+        self.out_channels = conv_channels_list[-1]
         self.activation = activation
 
         # Spectrum Attention Block:
         if use_SA:
             self.expand_channels = expand_channels
-            self.attention_spectral = SpectrumAttentionBlock(in_channels=1, out_channels=expand_channels) 
+            self.attention_spectral = SpectrumAttentionBlock(in_channels=self.in_channels, out_channels=expand_channels) 
         else:
             self.attention_spectral = nn.Identity()
             self.expand_channels = self.in_channels
@@ -76,35 +85,28 @@ class PhiNet(nn.Module):
         self.bn = nn.BatchNorm2d(self.expand_channels)
         
         # Strided Convolution Branch 7x7
-        self.conv_branch = self.create_conv_layers(conv_channels_list, activation=self.activation, batch_norm=True)
+        self.conv_branch = self.create_conv_layers(conv_channels_list, batch_norm=True)
         
-        # Self Decoder Branch 1x1 (1D Convolution) to output 1 channel:
-        self.decoder_conv = nn.Conv1d(self.expand_channels, 1, kernel_size=1, stride=1, padding=0)
+        # Self Decoder Branch 1x1 (2D Convolution) to output 1 channel:
+        self.decoder_pool = nn.Conv2d(self.expand_channels, 1, kernel_size=1, stride=1, padding=0)
+        self.decoder_conv = nn.Conv2d(self.out_channels, 1, kernel_size=1, stride=1, padding=0)
 
     def create_conv_layers(self, channels, batch_norm=True):
-        layers = [nn.Conv2d(in_c, out_c, kernel_size=7, stride=2, padding=3) for in_c, out_c in zip(channels[:-1], channels[1:])]
-        # add activation function and batchnorm between each layer of the layers of the list:
-        for i in range(len(layers)):
-            layers.insert(2*i+1, self.activation)
-            if batch_norm:
-                layers.insert(2*i+2, nn.BatchNorm2d(channels[i+1]))
-        layers.append(nn.Conv2d(channels[-1], out_channels=self.expand_channels, kernel_size=3, stride=1, padding=1))
-        layers.append(self.activation)
+        layers = [ConvBA(in_channels=in_c, out_channels=out_c, kernel_size=7, stride=2, padding=3, dilation=1) for in_c, out_c in zip(channels[:-1], channels[1:])]
         return nn.Sequential(*layers)
     
     def forward(self, x):
         x = self.attention_spectral(x) # spectrum attention common
         # A) Pooling Branch Forward Pass
-        x_pool = self.bn(self.pool(x)) # b, 12, w, h
-        x_pool = self.decoder_conv(x_pool) # b, 1, w, h (same as
+        x_pool = self.bn(self.pool(x)) # b, 2 or 12, w, h
+        x_pool = self.decoder_pool(x_pool) # b, 1, w, h (same as)
         
         # B) Convolution Branch Forward Pass
         x_conv = self.conv_branch(x) # b, 12, w, h
-        x_conv = self.decoder_conv(x_conv) # b, 1, w, h (same as
-        
-        # C) 3D Convolution Branch Forward Pass
-        # TODO: Implement 3D Convolution Branch
-        
+        x_conv = self.decoder_conv(x_conv) # b, 1, w, h (same as)
+
+        assert x_pool.shape == x_conv.shape, f"Shapes of both branches must be the same.. {x_pool.shape} != {x_conv.shape}"
+
         # Concatenating the outputs of both branches with addition
         x_out = x_pool + x_conv
         return x_out # b, 1, w//16, h//16
@@ -119,7 +121,7 @@ class PhiNet(nn.Module):
 class TestPhiNet(unittest.TestCase):
     
     def setUp(self):
-        self.conv_channels_list = [1, 64, 128, 256]
+        self.conv_channels_list = [2, 64, 128, 256]
         self.out_channels = 12
         self.model = PhiNet(conv_channels_list=self.conv_channels_list, out_channels=self.out_channels)
         self.input_tensor = torch.randn(5, 1, 128, 128)  # Batch size of 5, 1 input channel, 128x128 image
