@@ -1,4 +1,5 @@
 h5py
+lightning
 netcdf4
 h5netcdf
 rasterio
@@ -16,5 +17,4 @@ seaborn
 tqdm
 tzlocal
 regex
-opencv
-gdal
+opencv-python

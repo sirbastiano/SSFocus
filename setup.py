@@ -27,6 +27,15 @@ def install_dependencies():
         subprocess.check_call(["pip", "install", "torch==2.0.0", "torchvision==0.15.1", "-f", torch_dependencies])
         
     subprocess.check_call(["pip", "install", "git+https://github.com/Rich-Hall/sentinel1decoder"])
+    
+    with open("./requirements.txt", "r") as f:
+        packages = f.read().split("\n")
+        for pack in packages:
+            if pack != "":
+                package = pack.replace(' ','')
+                subprocess.check_call(["pip", "install", package])
+        
+        
 
 
 
