@@ -1,7 +1,7 @@
 import torch 
 from torch import nn 
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltcircu
 from constants import load_constants
 import pandas as pd 
 
@@ -66,10 +66,7 @@ class Focalizer(nn.Module):
         self.start_idx, self.end_idx = 0, 4096
         
         # layers initialization:
-        V = estimate_V_eff(self.V_metadata, self.patch_dim)()
-        self.D = estimate_D(start_idx=0, end_idx=4096)(V)
-        
-        self.R0 = self.R0[self.start_idx:self.end_idx]
+        self.V = estimate_V_eff(self.V_metadata, self.patch_dim)
         
         
     @staticmethod
@@ -82,6 +79,9 @@ class Focalizer(nn.Module):
 
     def _compute_filter_rcmc(self):
         """ Compute the RCMC shift filter. """
+        self.D = estimate_D(start_idx=0, end_idx=4096)(self.V())
+        self.R0 = self.R0[self.start_idx:self.end_idx]
+        
         # self.RO is slant range vec
         rcmc_shift = self.R0 * ( (1/self.D) - 1)
         range_freq_vals = torch.linspace(-self.constants['range_sample_freq']/2, self.constants['range_sample_freq']/2, steps=self.constants['len_range_line'])[self.start_idx:self.end_idx]
@@ -94,7 +94,7 @@ class Focalizer(nn.Module):
         return self.azimuth_filter
 
     def forward(self, X):
-        X = X.to(self.device)
+        
         # TODO: this operation should be implemented for the batch and not for a single element 2-C
         X = X * self._compute_filter_rcmc().reshape(1, 1, 4096, 4096)
         X = torch.fft.ifftshift(torch.fft.ifft(X, dim=-1), dim=-1) # Convert to Range-Doppler
@@ -111,5 +111,6 @@ if __name__ == '__main__':
         aux = pd.read_pickle('/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/numpy/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a_pkt_8_metadata.pkl')
         eph = pd.read_pickle('/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/numpy/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a_ephemeris.pkl')
         model = Focalizer(metadata={'aux':aux, 'ephemeris':eph})
+        print('Model parameters:', list(model.parameters()))
     
     test_model()

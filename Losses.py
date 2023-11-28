@@ -11,7 +11,6 @@ def shannon_entropy_loss(I):
     loss = -torch.sum(D * torch.log(D_nonzero))
     return loss
 
-
 def complex_mse_loss(pred, target):
     assert torch.is_complex(pred), "Predicted tensor is not complex"
     assert torch.is_complex(target), f"Target tensor {target.shape} is not complex"
@@ -21,8 +20,6 @@ def complex_mse_loss(pred, target):
     mse_real = F.mse_loss(real_diff, torch.zeros_like(real_diff))
     mse_imag = F.mse_loss(imag_diff, torch.zeros_like(imag_diff))
     return mse_real + mse_imag
-
-
 
 def AF_loss(pred, target):
     """ Return the autofocus loss """
