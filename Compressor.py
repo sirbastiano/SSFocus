@@ -94,12 +94,8 @@ class Focalizer(nn.Module):
         return self.azimuth_filter
 
     def forward(self, X):
-        
         # TODO: this operation should be implemented for the batch and not for a single element 2-C
-        RCMC = self._compute_filter_rcmc().unsqueeze(0).unsqueeze(0)
-        print('RCMC shape:',RCMC.shape)
-        
-        X = X * RCMC
+        X = X * self._compute_filter_rcmc().unsqueeze(0).unsqueeze(0)
         X = torch.fft.ifftshift(torch.fft.ifft(X, dim=-1), dim=-1) # Convert to Range-Doppler
         X = X * self._compute_azimuth_filter().unsqueeze(0).unsqueeze(0)
         X = torch.fft.ifft(X, dim=-2)

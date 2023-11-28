@@ -81,6 +81,6 @@ if __name__ == '__main__':
     print('Model loaded successfully.')
     focused_model = FocusPlModule(input_img=x, gt=None, model=model, loss=shannon_entropy_loss)
     
-    trainer = pl.Trainer(max_epochs=500, log_every_n_steps=1)
+    trainer = pl.Trainer(max_epochs=150000, log_every_n_steps=1)
     trainer.fit(focused_model)
     
