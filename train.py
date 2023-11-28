@@ -9,7 +9,7 @@ from Losses import AF_loss, shannon_entropy_loss
 
 # init device
 if torch.cuda.is_available():
-    device = torch.device("cuda")
+    device = torch.device("cuda:0")
     print(f"Using {torch.cuda.get_device_name()} for training.")
 else:
     device = torch.device("cpu")
@@ -18,7 +18,7 @@ else:
 torch.set_float32_matmul_precision('medium')  # For performance
 
 class FocusPlModule(pl.LightningModule):
-    def __init__(self, input_img, gt = None, model = None, loss = AF_loss):
+    def __init__(self, input_img, gt = None, model = None, loss = shannon_entropy_loss):
         super().__init__()
 
         self.input_img = input_img
@@ -45,17 +45,20 @@ class FocusPlModule(pl.LightningModule):
             assert self.input_img.shape[0] == self.gt.shape[0], "Size mismatch between input and ground truth"
             dataset = TensorDataset(self.input_img, self.gt)
         else:
-            dataset = TensorDataset(self.input_img)
-        return torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=7)
+            dataset = TensorDataset(self.input_img.unsqueeze(0))
+        return torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
 
     
     def training_step(self, batch, batch_idx):
-        img, gt = batch
+        #img, gt = batch
+        img = batch
+        img = img[0] # hopper ... since gt is none
         output = self.model(img)
-        if gt is not None:
-            loss = self.loss_fn(output, gt)
-        else:
-            loss = self.loss_fn(output)
+        #if gt is not None:
+        #    loss = self.loss_fn(output, gt)
+        #else:
+        #    loss = self.loss_fn(output)
+        loss = self.loss_fn(output)
         self.log('train_loss', loss)
         self.log('lr', self.lr)
         return loss
@@ -65,7 +68,8 @@ class FocusPlModule(pl.LightningModule):
 
 if __name__ == '__main__':
     
-    x = torch.load('/home/roberto/PythonProjects/SSFocus/Data/4096_test_fft2D.pt')
+    x = torch.load('/home/roberto/PythonProjects/SSFocus/Data/4096_test_fft2D.pt').unsqueeze(0).to(device)
+    print('Input shape: {0}'.format(x.shape))
     print('Loaded image tensor from .pt file')
     # TODO: prommpt the real gt here:
     # ground_truth = torch.rand(1, 2, 4096, 4096, dtype=torch.complex64).to(device)
@@ -73,12 +77,10 @@ if __name__ == '__main__':
     # 
     aux = pd.read_pickle('/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/numpy/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a_pkt_8_metadata.pkl')
     eph = pd.read_pickle('/home/roberto/PythonProjects/SSFocus/Data/RAW/SM/numpy/s1a-s1-raw-s-vv-20200509t183227-20200509t183238-032492-03c34a_ephemeris.pkl')
-    model = Focalizer(metadata={'aux':aux, 'ephemeris':eph})
-    print('Model initialized')
+    model = Focalizer(metadata={'aux':aux, 'ephemeris':eph}).to(device)
+    print('Model loaded successfully.')
     focused_model = FocusPlModule(input_img=x, gt=None, model=model, loss=shannon_entropy_loss)
-    print('Model parameters:')
-    print(list(model.parameters()))
     
-    # trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1)
-    # trainer.fit(focused_model)
+    trainer = pl.Trainer(max_epochs=500, log_every_n_steps=1)
+    trainer.fit(focused_model)
     
