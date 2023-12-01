@@ -17,7 +17,7 @@ else:
     device = torch.device("cpu")
     print("No GPU available, using CPU for training.")
     
-torch.set_float32_matmul_precision('medium')  # For performance
+torch.set_float32_matmul_precision('high')  # For performance
 
 class FocusPlModule(pl.LightningModule):
     def __init__(self, 
