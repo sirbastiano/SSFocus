@@ -28,11 +28,10 @@ class estimate_V_eff(nn.Module):
         # self.a0 = nn.Parameter(torch.tensor(7185.267920397508 - self.V0))   # a0 parameter
         # self.ar = nn.Parameter(torch.tensor(-0.0011770266222256396))  # ar parameter (riga)
         # self.an = nn.Parameter(torch.tensor(2.42892102278347e-05))  # an parameter (colonna)
-        # QUELLI BRUTTI
+        # QUELLI PER PROVARE
         self.a0 = nn.Parameter(torch.tensor(0.))   # a0 parameter
         self.ar = nn.Parameter(torch.tensor(0.))  # ar parameter (riga)
         self.an = nn.Parameter(torch.tensor(0.))  # an parameter (colonna)
-
 
     def forward(self):
         x = torch.ones(self.patch_dim, device=device, dtype=torch.float64) * self.V0

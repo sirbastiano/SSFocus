@@ -111,6 +111,7 @@ class FocusPlModule(pl.LightningModule):
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read("model_setting.ini")
+    
     raw_path = '/media/warmachine/DBDISK/SSFocus/data/Processed/Sao_Paolo/raw_s1b-s6-raw-s-vv-20210103t214313-20210103t214344-024995-02f995.pkl'
     focus_path = '/media/warmachine/DBDISK/SSFocus/data/Processed/Sao_Paolo/focused_raw_s1b-s6-raw-s-vv-20210103t214313-20210103t214344-024995-02f995.pkl'
 
@@ -121,29 +122,28 @@ if __name__ == '__main__':
     aux = raw['metadata']
     eph = raw['ephemeris']
     
-    radar_data = echo[5000:9000, 2000:4000]    
+    radar_data = echo[9000:13000, 8000:12000]    
+    focused_data = focused[9000:13000, 8000:12000]  
     
     x = torch.tensor(radar_data, device=device).to(torch.complex128).unsqueeze(0).unsqueeze(0)
-    y = torch.tensor(radar_data, device=device).to(torch.complex128).unsqueeze(0).unsqueeze(0)
+    y = torch.tensor(focused_data, device=device).to(torch.complex128).unsqueeze(0).unsqueeze(0)
     
-    
-    
-    model = Focalizer(metadata={'aux':aux, 'ephemeris':eph}).to(device)
+    model = Focalizer(metadata={'aux':aux[9000:13000], 'ephemeris':eph}).to(device)
     print('Model loaded successfully.')
 
     focused_model = FocusPlModule(
                 input_img=x, 
                 gt=y, 
                 model=model,
-                learning_rate_a0 = 5e1, 
-                learning_rate_ar = 1e-4, 
+                learning_rate_a0 = 5e2, 
+                learning_rate_ar = 1e-3, 
                 learning_rate_an = 1e-5, 
                 loss=shannon_entropy_loss)
     trainer = pl.Trainer(max_epochs=50, log_every_n_steps=1)
     trainer.fit(focused_model)
     
     print('Model trained successfully.')
-    print('final results')
+    print('Final results')
     print(list(model.parameters()))
     
     model.eval()  # Set the model to evaluation mode
