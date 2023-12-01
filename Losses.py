@@ -48,11 +48,11 @@ def custom_loss(I):
     
 
 def rect_im(I):
-    b, c, w, h = I.shape
-    cx, cy = w//2, h//2
-    delta = h//2
-    # compute on the small rectangle
-    I = I[:,:, cy-delta:cy+delta, cx-delta:cx+delta]
+    # b, c, w, h = I.shape
+    # cx, cy = w//2, h//2
+    # delta = h//2
+    # # compute on the small rectangle
+    # I = I[:,:, cy-delta:cy+delta, cx-delta:cx+delta]
     return I
 
 def shannon_entropy_loss(I):
