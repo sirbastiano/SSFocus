@@ -28,17 +28,23 @@ def load_constants_from_meta(meta, patch_dim = PATCH_DIM):
 
     
     constants['range_start_time'] = meta["SWST"].unique()[0] + suppressed_data_time
+    
+    
     # TODO: verify the correct application of RST
     # print('Before:')
     # print(constants['range_start_time'])
     # print('After:')
-    # constants['range_start_time'] = meta["SWST"].unique()[0] + suppressed_data_time 
+    # constants['range_start_time'] = meta["SWST"].unique()[0] + suppressed_data_time + X_RANGE[1] * constants['range_sample_period']
     # print(constants['range_start_time'])
-    # scale_factor = constants['len_range_line']/19950
+    scale_factor = constants['len_range_line']/19950
+    
+    
     
     constants['sample_num_along_range_line'] = torch.arange(start=0, end=constants['len_range_line'], step=1, dtype=torch.float64)
     fast_time_vec = constants['range_start_time'] + (constants['range_sample_period'] * constants['sample_num_along_range_line'])
     constants['fast_time_vec'] = fast_time_vec
+    
+    
     
     # REPLICA:
     TXPSF = meta["Tx Pulse Start Frequency"].unique()[0]

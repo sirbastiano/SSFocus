@@ -163,7 +163,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         output_tensor = model(x) 
         output_tensor = output_tensor.squeeze(0).squeeze(0)
-        output_tensor = torch.roll(output_tensor, shifts=2700, dims=1)
+        output_tensor = torch.roll(output_tensor, shifts=-1800, dims=1)
         output_tensor = output_tensor.cpu().numpy()  # Removing batch dimension and sending to cpu
     # model._plot_tensor(input_tensor)
     stop = time.time()

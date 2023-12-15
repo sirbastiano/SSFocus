@@ -184,34 +184,34 @@ class Focalizer(nn.Module):
         
     def forward(self, x):
         # CHECKED ZERO PADDING
-        # with torch.no_grad():
-        #     x = self.fft2D(x)
-        #     B, C, H, original_W = x.shape
-            
-        #     desired_width = 250
-        #     # Apply zero padding
-        #     pad_width = desired_width 
-        #     x = F.pad(x, (pad_width // 2, pad_width // 2, 0, 0), 'constant', 0)
-            
-        #     # Perform operations on padded x
-        #     B, C, H, W = x.shape
-        #     rg_filter = self._compute_range_filter(W).reshape(1, 1, 1, W)
-        #     x = x * rg_filter # Range Compression
-
-        #     # Remove padding
-        #     start_index = pad_width // 2
-        #     end_index = start_index + original_W
-        #     x = x[:, :, :, start_index:end_index]
-            
         with torch.no_grad():
             x = self.fft2D(x)
-            B,C,H,W = x.shape
-            rg_filter = self._compute_range_filter()
-            # rg_filter = torch.roll(rg_filter, -1000)
-            rg_filter = rg_filter.reshape(1, 1, 1, W)
-            # rg_filter = torch.roll(rg_filter, int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
-            # print('ROLL SIZE:', int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
+            B, C, H, original_W = x.shape
+            
+            desired_width = 500
+            # Apply zero padding
+            pad_width = desired_width 
+            x = F.pad(x, (pad_width // 2, pad_width // 2, 0, 0), 'constant', 0)
+            
+            # Perform operations on padded x
+            B, C, H, W = x.shape
+            rg_filter = self._compute_range_filter(W).reshape(1, 1, 1, W)
             x = x * rg_filter # Range Compression
+
+            # Remove padding
+            start_index = pad_width // 2
+            end_index = start_index + original_W
+            x = x[:, :, :, start_index:end_index]
+            
+        # with torch.no_grad():
+        #     x = self.fft2D(x)
+        #     B,C,H,W = x.shape
+        #     rg_filter = self._compute_range_filter()
+        #     # rg_filter = torch.roll(rg_filter, -1000)
+        #     rg_filter = rg_filter.reshape(1, 1, 1, W)
+        #     # rg_filter = torch.roll(rg_filter, int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
+        #     # print('ROLL SIZE:', int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
+        #     x = x * rg_filter # Range Compression
         x = x * self._compute_filter_rcmc().unsqueeze(0).unsqueeze(0)
         x = torch.fft.ifftshift(torch.fft.ifft(x, dim=-1), dim=-1) # Convert to Range-Doppler
         x = x * self._compute_azimuth_filter().unsqueeze(0).unsqueeze(0)
