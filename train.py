@@ -1,3 +1,4 @@
+from ast import literal_eval
 import pandas as pd
 from pathlib import Path
 import torch
@@ -5,9 +6,11 @@ import torch.nn as nn
 import pytorch_lightning as pl
 from torch.utils.data import TensorDataset
 import configparser
+import time
 
 from Compressor import Focalizer
 from Losses import shannon_entropy_loss
+import sys
 
 # init device
 if torch.cuda.is_available():
@@ -111,6 +114,8 @@ class FocusPlModule(pl.LightningModule):
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read("model_setting.ini")
+    max_epochs = int(config['TRAINER']['MAX_EPOCHS'])
+    MULTI = float(config['TRAINER']['MULTI'])
     
     raw_path = '/media/warmachine/DBDISK/SSFocus/data/Processed/Sao_Paolo/raw_s1b-s6-raw-s-vv-20210103t214313-20210103t214344-024995-02f995.pkl'
     focus_path = '/media/warmachine/DBDISK/SSFocus/data/Processed/Sao_Paolo/focused_raw_s1b-s6-raw-s-vv-20210103t214313-20210103t214344-024995-02f995.pkl'
@@ -122,37 +127,48 @@ if __name__ == '__main__':
     aux = raw['metadata']
     eph = raw['ephemeris']
     
-    radar_data = echo[9000:13000, 8000:12000]    
-    focused_data = focused[9000:13000, 8000:12000]  
+    y_space = literal_eval(config['TILER']['Y_RANGE'])
+    x_space = literal_eval(config['TILER']['X_RANGE'])
+    
+    radar_data =      echo[y_space[0]:y_space[1], x_space[0]:x_space[1]]    
+    focused_data = focused[y_space[0]:y_space[1], x_space[0]:x_space[1]]  
     
     x = torch.tensor(radar_data, device=device).to(torch.complex128).unsqueeze(0).unsqueeze(0)
     y = torch.tensor(focused_data, device=device).to(torch.complex128).unsqueeze(0).unsqueeze(0)
     
-    model = Focalizer(metadata={'aux':aux[9000:13000], 'ephemeris':eph}).to(device)
+    model = Focalizer(metadata={'aux':aux[y_space[0]:y_space[1]], 'ephemeris':eph}).to(device)
     print('Model loaded successfully.')
 
     focused_model = FocusPlModule(
                 input_img=x, 
                 gt=y, 
                 model=model,
-                learning_rate_a0 = 5e2, 
-                learning_rate_ar = 1e-3, 
-                learning_rate_an = 1e-5, 
+                learning_rate_a0 = MULTI * 5e2, 
+                learning_rate_ar = MULTI * 1e-3, 
+                learning_rate_an = MULTI * 1e-5, 
                 loss=shannon_entropy_loss)
-    trainer = pl.Trainer(max_epochs=50, log_every_n_steps=1)
+    start = time.time()
+    trainer = pl.Trainer(max_epochs=max_epochs, log_every_n_steps=1)
     trainer.fit(focused_model)
+    stop = time.time()
     
     print('Model trained successfully.')
+    print(f"Time taken: {stop - start} seconds, trainer mode!")
     print('Final results')
     print(list(model.parameters()))
-    
     model.eval()  # Set the model to evaluation mode
     # Perform inference
+    start = time.time()
+    
     with torch.no_grad():
         output_tensor = model(x) 
         output_tensor = output_tensor.squeeze(0).squeeze(0)
+        output_tensor = torch.roll(output_tensor, shifts=2700, dims=1)
         output_tensor = output_tensor.cpu().numpy()  # Removing batch dimension and sending to cpu
     # model._plot_tensor(input_tensor)
-    model._plot_tensor(output_tensor, save=True, name='foc_pred.png')
+    stop = time.time()
+    print(f"Time taken: {stop - start} seconds, eval mode!")
+    
+    model._plot_tensor(output_tensor, save=True, name=f'foc_pred_epoch_{max_epochs}_M_{MULTI}.png')
     model._plot_tensor(y.squeeze(0).squeeze(0), save=True, name='gt.png')
     

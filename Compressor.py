@@ -1,5 +1,6 @@
 import torch 
 from torch import nn 
+import torch.nn.functional as F  
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -14,6 +15,7 @@ config = configparser.ConfigParser()
 config.read("model_setting.ini")
 
 PATCH_DIM = literal_eval(config['TRAINER']['PATCH_DIM'])
+X_RANGE = literal_eval(config['TILER']['X_RANGE'])
 
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -69,7 +71,7 @@ class estimate_D(nn.Module):
         E = 1 - C
         F = torch.sqrt(E)
 
-        torch.save(F.T, 'D_estimated_by_AI.pt')
+        # torch.save(F.T, 'D_estimated_by_AI.pt')
         
         return F.T
    
@@ -81,7 +83,7 @@ class Focalizer(nn.Module):
         
         self.meta = metadata['aux']
         self.constants = load_constants_from_meta(self.meta)
-        pd.to_pickle(self.constants, 'costanti_ai.pkl')
+        # pd.to_pickle(self.constants, 'costanti_ai.pkl')
         
         
         self.V_metadata = self.extract_velocity(metadata) 
@@ -136,7 +138,7 @@ class Focalizer(nn.Module):
         plt.figure(figsize=(15,15))
         norm_input = colors.LogNorm(vmin=input_data_mean - input_data_std * 0.5 + 1e-10, vmax=input_data_mean + input_data_std * 2)
         plt.imshow(np.abs(input_tensor), cmap='viridis', norm=norm_input)
-        plt.axis('off')
+        # plt.axis('off')
         if save:
             if name is not None:
                 plt.savefig(name)
@@ -157,31 +159,58 @@ class Focalizer(nn.Module):
         """ Compute the RCMC shift filter. """
         self.D = estimate_D(meta=self.meta)(self.V())
         self.R0 = self.R0.to(device)
-        torch.save(self.R0, 'R0_ai.pt')
+        # torch.save(self.R0, 'R0_ai.pt')
         # self.RO is slant range vec
         rcmc_shift = self.R0[0] * ( (1/self.D) - 1)
-        torch.save(rcmc_shift, 'rcmc_shift_ai.pt')
+        # torch.save(rcmc_shift, 'rcmc_shift_ai.pt')
         range_freq_vals = torch.linspace(-self.constants['range_sample_freq']/2, self.constants['range_sample_freq']/2, steps=self.constants['len_range_line'], dtype=torch.float64).to(self.device)
         self.rcmc_filter = torch.exp(4j * self.constants['pi'] * range_freq_vals * rcmc_shift / self.constants['c'])
-        torch.save(self.rcmc_filter, 'filtro_rcmc_ai.pt')
+        # torch.save(self.rcmc_filter, 'filtro_rcmc_ai.pt')
         return self.rcmc_filter
 
     def _compute_azimuth_filter(self):
         """ Compute the Azimuth filter. """
         self.azimuth_filter = torch.exp(4j * self.constants['pi'] * self.R0 * self.D / self.constants['wavelength']).to(self.device)
-        torch.save(self.azimuth_filter, 'filtro_azi_ai.pt')
+        # torch.save(self.azimuth_filter, 'filtro_azi_ai.pt')
         return self.azimuth_filter
 
-    def _compute_range_filter(self):
+    def _compute_range_filter(self, zero_pad_dim=None):
         tx_replica = torch.tensor(self.constants['tx_replica'], device=device)
-        h, w = self.patch_dim # zero-pad or trim the filter to the patch dimension
-        return torch.conj(torch.fft.fft(tx_replica, w))
+        if zero_pad_dim is None:
+            h, w = self.patch_dim # zero-pad or trim the filter to the patch dimension
+        else:
+            w = zero_pad_dim
+        return torch.conj(torch.fft.fft(tx_replica, n=w))
         
     def forward(self, x):
+        # CHECKED ZERO PADDING
+        # with torch.no_grad():
+        #     x = self.fft2D(x)
+        #     B, C, H, original_W = x.shape
+            
+        #     desired_width = 250
+        #     # Apply zero padding
+        #     pad_width = desired_width 
+        #     x = F.pad(x, (pad_width // 2, pad_width // 2, 0, 0), 'constant', 0)
+            
+        #     # Perform operations on padded x
+        #     B, C, H, W = x.shape
+        #     rg_filter = self._compute_range_filter(W).reshape(1, 1, 1, W)
+        #     x = x * rg_filter # Range Compression
+
+        #     # Remove padding
+        #     start_index = pad_width // 2
+        #     end_index = start_index + original_W
+        #     x = x[:, :, :, start_index:end_index]
+            
         with torch.no_grad():
             x = self.fft2D(x)
             B,C,H,W = x.shape
-            rg_filter = self._compute_range_filter().reshape(1, 1, 1, W)
+            rg_filter = self._compute_range_filter()
+            # rg_filter = torch.roll(rg_filter, -1000)
+            rg_filter = rg_filter.reshape(1, 1, 1, W)
+            # rg_filter = torch.roll(rg_filter, int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
+            # print('ROLL SIZE:', int(W * X_RANGE[0]/len(self.constants['tx_replica'])))
             x = x * rg_filter # Range Compression
         x = x * self._compute_filter_rcmc().unsqueeze(0).unsqueeze(0)
         x = torch.fft.ifftshift(torch.fft.ifft(x, dim=-1), dim=-1) # Convert to Range-Doppler

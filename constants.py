@@ -3,12 +3,13 @@ import sentinel1decoder
 import configparser
 from ast import literal_eval
 import numpy as np 
-
+import pandas as pd
 
 config = configparser.ConfigParser()
 config.read("model_setting.ini")
 
 PATCH_DIM = literal_eval(config['TRAINER']['PATCH_DIM'])
+X_RANGE = literal_eval(config['TILER']['X_RANGE'])
 
 def load_constants_from_meta(meta, patch_dim = PATCH_DIM):
     constants = {}
@@ -24,18 +25,25 @@ def load_constants_from_meta(meta, patch_dim = PATCH_DIM):
     constants['pi'] = 3.141592653589793
     constants['rank'] = meta["Rank"].unique()[0]
     suppressed_data_time = 320/(8*sentinel1decoder.constants.F_REF)
+
+    
     constants['range_start_time'] = meta["SWST"].unique()[0] + suppressed_data_time
+    # TODO: verify the correct application of RST
+    # print('Before:')
+    # print(constants['range_start_time'])
+    # print('After:')
+    # constants['range_start_time'] = meta["SWST"].unique()[0] + suppressed_data_time 
+    # print(constants['range_start_time'])
+    # scale_factor = constants['len_range_line']/19950
+    
     constants['sample_num_along_range_line'] = torch.arange(start=0, end=constants['len_range_line'], step=1, dtype=torch.float64)
-    # constants['sample_num_along_range_line'] = torch.tensor(np.arange(0, constants['len_range_line'], 1, dtype=np.float64))
     fast_time_vec = constants['range_start_time'] + (constants['range_sample_period'] * constants['sample_num_along_range_line'])
     constants['fast_time_vec'] = fast_time_vec
     
-    
-    
-    
+    # REPLICA:
     TXPSF = meta["Tx Pulse Start Frequency"].unique()[0]
-    TXPRR = meta["Tx Ramp Rate"].unique()[0]
-    TXPL = meta["Tx Pulse Length"].unique()[0]
+    TXPRR = meta["Tx Ramp Rate"].unique()[0] 
+    TXPL = meta["Tx Pulse Length"].unique()[0] 
     num_tx_vals = int(TXPL*constants['range_sample_freq'])
     tx_replica_time_vals = torch.linspace(-TXPL/2, TXPL/2, steps=num_tx_vals)
     phi1 = TXPSF + TXPRR*TXPL/2
@@ -73,3 +81,12 @@ def load_constants_from_meta(meta, patch_dim = PATCH_DIM):
 if __name__ == '__main__':
     print(PATCH_DIM)
     print(type(PATCH_DIM))
+    raw_path = '/media/warmachine/DBDISK/SSFocus/data/Processed/Sao_Paolo/raw_s1b-s6-raw-s-vv-20210103t214313-20210103t214344-024995-02f995.pkl'
+
+    raw = pd.read_pickle(raw_path)
+
+    echo = raw['echo']
+    aux = raw['metadata']
+    const = load_constants_from_meta(meta=aux, patch_dim = PATCH_DIM)
+    
+    
